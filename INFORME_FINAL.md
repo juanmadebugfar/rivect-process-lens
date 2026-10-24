@@ -1,6 +1,6 @@
 # Informe final — RIVECT Process Lens
 
-Rama: `claude/sharp-mayer-77h7i8`. Estado: **flujo de negocio completo y utilizable**; verificaciones automáticas pasando.
+Rama: `claude/sharp-mayer-77h7i8` · Pull request: https://github.com/juanmadebugfar/rivect-process-lens/pull/1 (sin merge). Estado: **flujo de negocio completo y utilizable**; verificaciones automáticas pasando.
 Todo lo afirmado abajo como "verificado" fue ejecutado en esta sesión; lo que no se pudo probar figura en
 *Limitaciones reales* y *No verificado*.
 
