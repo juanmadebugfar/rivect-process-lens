@@ -465,3 +465,12 @@ textarea.input {
   background: rgba(255, 255, 255, 0.14);
   border-color: transparent;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

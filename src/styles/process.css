@@ -148,15 +148,20 @@
   margin-top: 6px;
   font-size: 11.5px;
   color: var(--ink-2);
-  flex-wrap: wrap;
 }
 .sn-metrics .delta {
   color: var(--propose);
   font-weight: 600;
 }
+.sn-metrics.strong {
+  margin-top: 1px;
+  justify-content: space-between;
+  color: var(--ink);
+  font-weight: 600;
+}
 .sn-wait {
-  margin-top: 2px;
   font-size: 11.5px;
+  font-weight: 500;
   color: var(--signal);
 }
 .sn-bar {
@@ -296,6 +301,11 @@
   font-size: 12px;
   font-weight: 700;
   color: var(--ink-2);
+}
+.grid-1 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 .grid-2 {
   display: grid;

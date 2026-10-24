@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ACTIVITY_LABELS, EVIDENCE_HELP, EVIDENCE_LABELS, FREQUENCY_LABELS, SOLUTIONS } from '../../domain/constants';
+import { ACTIVITY_LABELS, EVIDENCE_HELP, EVIDENCE_SHORT, FREQUENCY_LABELS, SOLUTIONS } from '../../domain/constants';
 import { fmtLead, fmtMoney, fmtNum } from '../../domain/format';
 import { RULES } from '../../domain/findings';
 import { ACTIVITY_TYPES, EVIDENCE_LEVELS, FREQUENCY_UNITS, type Project, type Stage } from '../../domain/types';
@@ -104,12 +104,13 @@ function StageForm({ stage, project, analysis }: { stage: Stage; project: Projec
 
       <TextField label="Nombre" value={stage.name} maxLength={120} onChange={(name) => set({ name })} testId="stage-name" />
 
-      <div className="grid-2">
+      <div className="grid-1">
         <SelectField
           label="Rol"
           value={stage.roleId ?? ''}
           options={[{ value: '', label: 'Sin rol' }, ...project.roles.map((r) => ({ value: r.id, label: r.name }))]}
           onChange={(v) => set({ roleId: v === '' ? null : v })}
+          hint={stage.roleId ? undefined : 'Sin rol: el costo de esta etapa se calcula como 0.'}
           testId="stage-role"
         />
         <SelectField
@@ -158,7 +159,7 @@ function StageForm({ stage, project, analysis }: { stage: Stage; project: Projec
       <Segmented
         label="Procedencia del dato"
         value={stage.evidence}
-        options={EVIDENCE_LEVELS.map((e) => ({ value: e, label: EVIDENCE_LABELS[e], title: EVIDENCE_HELP[e] }))}
+        options={EVIDENCE_LEVELS.map((e) => ({ value: e, label: EVIDENCE_SHORT[e], title: EVIDENCE_HELP[e] }))}
         onChange={(evidence) => set({ evidence })}
         hint={EVIDENCE_HELP[stage.evidence]}
       />

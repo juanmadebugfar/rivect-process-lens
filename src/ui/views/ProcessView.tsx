@@ -9,7 +9,7 @@ import { StageList } from './StageList';
 
 export function ProcessView({ project, analysis }: { project: Project; analysis: Analysis }) {
   const [mode, setMode] = useState<'actual' | 'propuesto'>('actual');
-  const [listOpen, setListOpen] = useState(() => window.innerWidth >= 1680);
+  const [listOpen, setListOpen] = useState(() => window.innerWidth >= 1680 || window.innerWidth <= 1100);
   const addStage = useStore((s) => s.addStage);
   const arrange = useStore((s) => s.arrange);
   const hasProposal = analysis.calc.solutionsUsed.length > 0;

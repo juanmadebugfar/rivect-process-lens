@@ -2,7 +2,7 @@ import { analyzeGraph } from './graph';
 import type { Connection, Stage } from './types';
 
 export const LAYOUT_X = 280;
-export const LAYOUT_Y = 156;
+export const LAYOUT_Y = 176;
 /** Capas por fila antes de pasar a la siguiente banda, para que el flujo quepa en pantalla. */
 export const LAYOUT_COLUMNS = 3;
 

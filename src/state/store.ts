@@ -5,7 +5,10 @@ import { sampleProjects } from '../domain/samples';
 import type { Meta, Project, ProposalSolution, Role, SolutionId, Sector, Stage, Thresholds } from '../domain/types';
 import { loadState, saveState } from './persistence';
 
+type Snap = { projects: Project[]; activeId: string | null };
+
 const HISTORY_LIMIT = 60;
+const COALESCE_MS = 1500;
 
 export interface Notice {
   id: number;
@@ -21,8 +24,8 @@ interface State {
   projects: Project[];
   activeId: string | null;
   selectedStageId: string | null;
-  past: Project[][];
-  future: Project[][];
+  past: Snap[];
+  future: Snap[];
   notice: Notice | null;
   savedAt: number | null;
   saveFailed: boolean;
@@ -84,19 +87,27 @@ let noticeSeq = 0;
 
 export const useStore = create<State>((set, get) => {
   /** Aplica un cambio sobre la lista de proyectos registrando historial. */
-  const commit = (mutate: (projects: Project[]) => Project[], opts: { history?: boolean } = {}) => {
+  let lastKey: string | null = null;
+  let lastAt = 0;
+  const commit = (mutate: (projects: Project[]) => Project[], opts: { history?: boolean; key?: string } = {}) => {
     const { projects, past } = get();
     const next = mutate(projects);
     if (next === projects) return;
+    // Las ediciones seguidas del mismo campo (tecleo, deslizadores) se agrupan en un solo paso de deshacer.
+    const now = Date.now();
+    const merge = !!opts.key && opts.key === lastKey && now - lastAt < COALESCE_MS;
+    lastKey = opts.key ?? null;
+    lastAt = now;
+    const skipHistory = opts.history === false || merge;
     set({
       projects: next,
-      past: opts.history === false ? past : [...past, projects].slice(-HISTORY_LIMIT),
+      past: skipHistory ? past : [...past, { projects, activeId: get().activeId }].slice(-HISTORY_LIMIT),
       future: opts.history === false ? get().future : [],
     });
   };
 
   /** Modifica el proyecto activo y actualiza su fecha. */
-  const editActive = (fn: (p: Project) => Project, opts?: { history?: boolean }) => {
+  const editActive = (fn: (p: Project) => Project, opts?: { history?: boolean; key?: string }) => {
     const id = get().activeId;
     if (!id) return;
     commit(
@@ -162,7 +173,12 @@ export const useStore = create<State>((set, get) => {
 
     importProjects: (incoming) => {
       const taken = new Set(get().projects.map((p) => p.id));
-      const added = incoming.map((p) => (taken.has(p.id) ? cloneProject(p, `${p.name} (importado)`) : p));
+      const added = incoming.map((p) => {
+        const clash = taken.has(p.id);
+        const project = clash ? cloneProject(p, `${p.name} (importado)`) : p;
+        taken.add(project.id);
+        return project;
+      });
       commit((ps) => [...ps, ...added]);
       set({ activeId: added[0]?.id ?? get().activeId, selectedStageId: null });
     },
@@ -172,10 +188,10 @@ export const useStore = create<State>((set, get) => {
       if (clean.workdaysPerMonth !== undefined) clean.workdaysPerMonth = clamp(clean.workdaysPerMonth, 1, 31);
       if (clean.hoursPerDay !== undefined) clean.hoursPerDay = clamp(clean.hoursPerDay, 1, 24);
       if (clean.name !== undefined) clean.name = clean.name.slice(0, 160);
-      editActive((p) => ({ ...p, ...clean }));
+      editActive((p) => ({ ...p, ...clean }), { key: `project:${Object.keys(clean).join()}` });
     },
 
-    patchMeta: (patch) => editActive((p) => ({ ...p, meta: { ...p.meta, ...patch } })),
+    patchMeta: (patch) => editActive((p) => ({ ...p, meta: { ...p.meta, ...patch } }), { key: `meta:${Object.keys(patch).join()}` }),
 
     patchThresholds: (patch) =>
       editActive((p) => {
@@ -186,7 +202,7 @@ export const useStore = create<State>((set, get) => {
           next[key] = clamp(v as number, 0, isPct ? 100 : 100_000);
         }
         return { ...p, thresholds: next };
-      }),
+      }, { key: `th:${Object.keys(patch).join()}` }),
 
     addStage: (partial = {}) => {
       const project = get().activeProject();
@@ -209,7 +225,7 @@ export const useStore = create<State>((set, get) => {
 
     updateStage: (id, patch) => {
       const clean = clampStagePatch(patch);
-      editActive((p) => ({ ...p, stages: p.stages.map((s) => (s.id === id ? { ...s, ...clean } : s)) }));
+      editActive((p) => ({ ...p, stages: p.stages.map((s) => (s.id === id ? { ...s, ...clean } : s)) }), { key: `stage:${id}:${Object.keys(clean).join()}` });
     },
 
     removeStage: (id) => {
@@ -228,8 +244,9 @@ export const useStore = create<State>((set, get) => {
     },
 
     beginGesture: () => {
-      const { projects, past } = get();
-      set({ past: [...past, projects].slice(-HISTORY_LIMIT), future: [] });
+      lastKey = null;
+      const { projects, past, activeId } = get();
+      set({ past: [...past, { projects, activeId }].slice(-HISTORY_LIMIT), future: [] });
     },
 
     moveStage: (id, x, y) =>
@@ -270,7 +287,7 @@ export const useStore = create<State>((set, get) => {
       const clean: Partial<Role> = { ...patch };
       if (clean.hourlyCost !== undefined) clean.hourlyCost = clamp(clean.hourlyCost, 0, 1_000_000);
       if (clean.name !== undefined) clean.name = clean.name.slice(0, 80);
-      editActive((p) => ({ ...p, roles: p.roles.map((r) => (r.id === id ? { ...r, ...clean } : r)) }));
+      editActive((p) => ({ ...p, roles: p.roles.map((r) => (r.id === id ? { ...r, ...clean } : r)) }), { key: `role:${id}:${Object.keys(clean).join()}` });
     },
 
     removeRole: (id) =>
@@ -303,7 +320,7 @@ export const useStore = create<State>((set, get) => {
         const current = p.proposal.solutions[solutionId];
         if (!current) return p;
         return { ...p, proposal: { ...p.proposal, solutions: { ...p.proposal.solutions, [solutionId]: { ...current, ...clean } } } };
-      });
+      }, { key: `sol:${solutionId}:${Object.keys(clean).join()}` });
     },
 
     patchProposal: (patch) =>
@@ -314,30 +331,32 @@ export const useStore = create<State>((set, get) => {
           ...(patch.realizationPct !== undefined ? { realizationPct: clamp(patch.realizationPct, 0, 100) } : {}),
           ...(patch.horizonMonths !== undefined ? { horizonMonths: Math.round(clamp(patch.horizonMonths, 1, 120)) } : {}),
         },
-      })),
+      }), { key: `proposal:${Object.keys(patch).join()}` }),
 
     undo: () => {
+      lastKey = null;
       const { past, projects, future, activeId } = get();
       const prev = past[past.length - 1];
       if (!prev) return;
       set({
-        projects: prev,
+        projects: prev.projects,
         past: past.slice(0, -1),
-        future: [projects, ...future].slice(0, HISTORY_LIMIT),
-        activeId: prev.some((p) => p.id === activeId) ? activeId : (prev[0]?.id ?? null),
+        future: [{ projects, activeId }, ...future].slice(0, HISTORY_LIMIT),
+        activeId: prev.projects.some((p) => p.id === prev.activeId) ? prev.activeId : (prev.projects[0]?.id ?? null),
         selectedStageId: null,
       });
     },
 
     redo: () => {
+      lastKey = null;
       const { past, projects, future, activeId } = get();
       const next = future[0];
       if (!next) return;
       set({
-        projects: next,
-        past: [...past, projects].slice(-HISTORY_LIMIT),
+        projects: next.projects,
+        past: [...past, { projects, activeId }].slice(-HISTORY_LIMIT),
         future: future.slice(1),
-        activeId: next.some((p) => p.id === activeId) ? activeId : (next[0]?.id ?? null),
+        activeId: next.projects.some((p) => p.id === next.activeId) ? next.activeId : (next.projects[0]?.id ?? null),
         selectedStageId: null,
       });
     },

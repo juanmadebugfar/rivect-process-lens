@@ -394,6 +394,17 @@
     display: none;
   }
 }
+@media (max-width: 640px) {
+  .kpis {
+    display: flex;
+    overflow-x: auto;
+  }
+  .kpi {
+    flex: 0 0 auto;
+    min-width: 150px;
+    border-bottom: 0;
+  }
+}
 @media (max-width: 520px) {
   .brand-name {
     display: none;

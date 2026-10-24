@@ -92,3 +92,35 @@ describe('autoLayout', () => {
     }
   });
 });
+
+describe('seguridad de la importación', () => {
+  it('no contamina prototipos con claves peligrosas', () => {
+    const doc = JSON.parse(exportToJson([first])) as { projects: Array<{ proposal: { assignments: Record<string, string> } }> };
+    const raw = JSON.stringify(doc).replace('"assignments":{', '"assignments":{"__proto__":"recordatorios","constructor":"recordatorios",');
+    const res = parseImport(raw);
+    expect(({} as Record<string, unknown>).recordatorios).toBeUndefined();
+    expect(Object.prototype.hasOwnProperty.call(Object.prototype, 'recordatorios')).toBe(false);
+    if (res.ok) {
+      const keys = Object.keys(res.projects[0]?.proposal.assignments ?? {});
+      expect(keys).not.toContain('__proto__');
+      expect(keys).not.toContain('constructor');
+    }
+  });
+
+  it('rechaza textos más largos que el límite y estructuras gigantes', () => {
+    const doc = JSON.parse(exportToJson([first])) as { projects: Array<{ name: string }> };
+    const p0 = doc.projects[0];
+    if (!p0) throw new Error('fixture');
+    p0.name = 'x'.repeat(500);
+    expect(parseImport(JSON.stringify(doc)).ok).toBe(false);
+  });
+
+  it('los textos con HTML se conservan como texto (React los escapa al mostrar)', () => {
+    const doc = JSON.parse(exportToJson([first])) as { projects: Array<{ name: string }> };
+    const p0 = doc.projects[0];
+    if (!p0) throw new Error('fixture');
+    p0.name = '<img src=x onerror=alert(1)>';
+    const res = parseImport(JSON.stringify(doc));
+    expect(res.ok && res.projects[0]?.name).toBe('<img src=x onerror=alert(1)>');
+  });
+});

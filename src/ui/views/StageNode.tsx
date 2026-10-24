@@ -45,19 +45,21 @@ function StageNodeView({ data, selected }: NodeProps<StageFlowNode>) {
       <div className="sn-metrics num">
         <span>{fmtNum(data.minutes)} min</span>
         <span>{fmtNum(data.occurrences, 0)}/mes</span>
+      </div>
+      <div className="sn-metrics num strong">
         <span className={changed ? 'delta' : ''}>
           {changed ? `${fmtNum(data.hoursBefore)} → ` : ''}
           {fmtNum(data.hours)} h/mes
         </span>
+        {data.waitHours > 0 ? <span className="sn-wait">espera {fmtNum(data.waitHours)} h</span> : null}
       </div>
-      {data.waitHours > 0 ? <div className="sn-wait num">espera {fmtNum(data.waitHours)} h</div> : null}
       <div className="sn-bar" title={`${fmtNum(data.manualPct, 0)}% del tiempo activo es manual`}>
         <span style={{ width: `${data.manualPct}%` }} />
       </div>
       <div className="sn-tags">
         {data.flags.cuello ? <span className="tag warn">Cuello</span> : null}
         {data.flags.repetitiva ? <span className="tag rep">Repetitiva</span> : null}
-        {proposed && data.solutionId ? <span className="tag sol">{SOLUTIONS[data.solutionId].name.split(' ').slice(0, 3).join(' ')}</span> : null}
+        {proposed && data.solutionId ? <span className="tag sol">{SOLUTIONS[data.solutionId].short}</span> : null}
         {data.evidence === 'supuesto' ? <span className="tag hyp">Supuesto</span> : null}
       </div>
       <Handle type="source" position={Position.Right} className="handle" />

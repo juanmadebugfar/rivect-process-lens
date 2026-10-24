@@ -228,6 +228,7 @@ export function buildDiagnosis(project: Project, calc: ProjectCalc = calcProject
   if (project.fictional) {
     limitations.unshift('Los datos de este diagnóstico son ficticios y solo ilustran el método; no describen a ninguna organización real.');
   }
+  if (calc.missingRoles.length) limitations.push(`Hay ${calc.missingRoles.length} etapa(s) sin rol asignado: su costo se calcula como 0 y subestima el costo total.`);
   if (calc.graph.hasCycle) limitations.push('El flujo contiene ciclos; el tiempo de ciclo ignora las conexiones que los cierran.');
   if (calc.graph.isolated.length && project.stages.length > 1) {
     limitations.push(`Hay ${calc.graph.isolated.length} etapa(s) sin conectar; se tratan como caminos independientes.`);

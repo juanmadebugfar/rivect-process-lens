@@ -24,6 +24,12 @@ export const EVIDENCE_LABELS: Record<Evidence, string> = {
   supuesto: 'Supuesto del equipo',
 };
 
+export const EVIDENCE_SHORT: Record<Evidence, string> = {
+  medido: 'Medido',
+  declarado: 'Declarado',
+  supuesto: 'Supuesto',
+};
+
 export const EVIDENCE_HELP: Record<Evidence, string> = {
   medido: 'Surge de registros, sistemas o cronometraje.',
   declarado: 'Lo afirmó el cliente en la reunión; no verificado.',
@@ -56,6 +62,8 @@ export const DEFAULT_THRESHOLDS: Thresholds = {
 export interface SolutionDef {
   id: SolutionId;
   name: string;
+  /** Nombre corto para etiquetas compactas (nodos del lienzo). */
+  short: string;
   summary: string;
   /** Actividades para las que la solución está pensada. */
   fits: readonly ActivityType[];
@@ -69,6 +77,7 @@ export interface SolutionDef {
 export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   portal_recepcion: {
     id: 'portal_recepcion',
+    short: 'Portal de recepción',
     name: 'Portal / formulario de recepción con validación',
     summary: 'El cliente carga datos y archivos en un formulario que valida campos obligatorios y formatos.',
     fits: ['captura', 'comunicacion'],
@@ -79,6 +88,7 @@ export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   },
   extraccion_datos: {
     id: 'extraccion_datos',
+    short: 'Extracción de datos',
     name: 'Extracción asistida de datos de documentos',
     summary: 'Lectura de documentos con plantillas y reglas; una persona confirma las excepciones.',
     fits: ['captura', 'documento'],
@@ -89,6 +99,7 @@ export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   },
   recordatorios: {
     id: 'recordatorios',
+    short: 'Recordatorios',
     name: 'Recordatorios y seguimiento automáticos',
     summary: 'Avisos programados por correo o mensajería, con escalamiento si no hay respuesta.',
     fits: ['comunicacion', 'espera', 'decision'],
@@ -99,6 +110,7 @@ export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   },
   plantillas_documentos: {
     id: 'plantillas_documentos',
+    short: 'Plantillas',
     name: 'Generación de documentos desde plantillas',
     summary: 'Documentos armados con datos ya cargados, con campos variables y control de versiones.',
     fits: ['documento'],
@@ -109,6 +121,7 @@ export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   },
   integracion_sistemas: {
     id: 'integracion_sistemas',
+    short: 'Integración',
     name: 'Integración y conciliación entre sistemas',
     summary: 'Sincronización de datos entre sistemas existentes y conciliación por reglas.',
     fits: ['captura', 'revision', 'documento'],
@@ -119,6 +132,7 @@ export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   },
   flujo_aprobacion: {
     id: 'flujo_aprobacion',
+    short: 'Flujo de aprobación',
     name: 'Flujo de aprobación con trazabilidad',
     summary: 'Revisión y aprobación en un flujo con responsables, estados y alertas por demora.',
     fits: ['revision', 'decision'],
@@ -129,6 +143,7 @@ export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   },
   tablero_alertas: {
     id: 'tablero_alertas',
+    short: 'Tablero de alertas',
     name: 'Tablero de seguimiento y alertas de plazos',
     summary: 'Vista única de casos y vencimientos, con alertas antes de que un plazo se pierda.',
     fits: ['espera', 'decision', 'revision', 'especializado'],
@@ -139,6 +154,7 @@ export const SOLUTIONS: Record<SolutionId, SolutionDef> = {
   },
   agenda_online: {
     id: 'agenda_online',
+    short: 'Agenda online',
     name: 'Agenda online con autogestión',
     summary: 'Turnos o reuniones reservados por el propio cliente según disponibilidad real.',
     fits: ['comunicacion', 'captura'],

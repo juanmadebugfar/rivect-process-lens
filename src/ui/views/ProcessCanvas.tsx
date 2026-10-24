@@ -6,6 +6,8 @@ import {
   ReactFlow,
   useEdgesState,
   useNodesState,
+  useReactFlow,
+  useStore as useFlowStore,
   type Edge,
   type OnConnect,
 } from '@xyflow/react';
@@ -18,6 +20,28 @@ import type { Analysis } from '../analysis';
 import { StageNode, type StageFlowNode } from './StageNode';
 
 const nodeTypes = { stage: StageNode };
+
+/** Si la etapa seleccionada queda fuera de la vista (p. ej. recién agregada), la centra sin cambiar el zoom. */
+function EnsureVisible({ stageId }: { stageId: string | null }) {
+  const flow = useReactFlow();
+  const width = useFlowStore((s) => s.width);
+  const height = useFlowStore((s) => s.height);
+  useEffect(() => {
+    if (!stageId) return;
+    const node = flow.getNode(stageId);
+    if (!node) return;
+    const { x, y, zoom } = flow.getViewport();
+    const w = node.measured?.width ?? 236;
+    const h = node.measured?.height ?? 120;
+    const left = node.position.x * zoom + x;
+    const top = node.position.y * zoom + y;
+    const inside = left >= 0 && top >= 0 && left + w * zoom <= width && top + h * zoom <= height;
+    if (!inside) void flow.setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom, duration: 200 });
+    // Solo al cambiar la selección: mover el lienzo mientras se arrastra sería molesto.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stageId]);
+  return null;
+}
 
 interface Props {
   project: Project;
@@ -133,6 +157,7 @@ export function ProcessCanvas({ project, analysis, mode }: Props) {
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--grid)" />
         <Controls showInteractive={false} position="bottom-left" />
+        <EnsureVisible stageId={selectedStageId} />
       </ReactFlow>
       {project.stages.length === 0 ? (
         <div className="canvas-empty">
