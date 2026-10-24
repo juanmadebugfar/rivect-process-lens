@@ -1,7 +1,38 @@
 import { useState } from 'react';
 import { SECTOR_LABELS } from '../domain/constants';
 import { useStore } from '../state/store';
+import type { Project } from '../domain/types';
 import { Menu } from './components/Menu';
+
+/** Miniatura del flujo: reconocer un proceso por su forma, como en un editor de nodos. */
+function FlowThumb({ project }: { project: Project }) {
+  const W = 120;
+  const H = 26;
+  const xs = project.stages.map((s) => s.x);
+  const ys = project.stages.map((s) => s.y);
+  if (xs.length === 0) return <svg className="thumb" viewBox={`0 0 ${W} ${H}`} aria-hidden="true" />;
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  const spanX = Math.max(1, Math.max(...xs) - minX);
+  const spanY = Math.max(1, Math.max(...ys) - minY);
+  // Escalas independientes: es un glifo de reconocimiento, no un plano a escala.
+  const sx = (W - 12) / spanX;
+  const sy = (H - 10) / spanY;
+  const pos = new Map(project.stages.map((s) => [s.id, { x: 6 + (s.x - minX) * sx, y: 5 + (s.y - minY) * sy }]));
+  return (
+    <svg className="thumb" viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+      {project.connections.map((c) => {
+        const a = pos.get(c.source);
+        const b = pos.get(c.target);
+        return a && b ? <line key={c.id} x1={a.x} y1={a.y} x2={b.x} y2={b.y} /> : null;
+      })}
+      {project.stages.map((s) => {
+        const p = pos.get(s.id);
+        return p ? <circle key={s.id} cx={p.x} cy={p.y} r="2.2" /> : null;
+      })}
+    </svg>
+  );
+}
 
 function Dots() {
   return (
@@ -59,8 +90,8 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
       ) : null}
       {projects.length === 0 ? <p className="muted small">No hay procesos. Cree uno o restaure los casos de ejemplo.</p> : null}
       <ul className="project-list">
-        {projects.map((p) => (
-          <li key={p.id} className={p.id === activeId ? 'on' : ''}>
+        {projects.map((p, i) => (
+          <li key={p.id} className={`reveal ${p.id === activeId ? 'on' : ''}`} style={{ '--i': i } as React.CSSProperties}>
             <button
               type="button"
               className="project-btn"
@@ -76,6 +107,7 @@ export function Sidebar({ onNavigate }: { onNavigate: () => void }) {
                 {SECTOR_LABELS[p.sector]} · <span className="num">{p.stages.length}</span> etapas
                 {p.fictional ? <span className="p-fict"> · ficticio</span> : null}
               </span>
+              <FlowThumb project={p} />
             </button>
             <Menu label={<Dots />} ariaLabel={`Acciones de ${p.name}`} align="start" testId={p.id === activeId ? 'project-menu' : undefined}>
               {(close) => (

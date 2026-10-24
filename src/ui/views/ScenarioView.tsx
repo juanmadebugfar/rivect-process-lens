@@ -5,6 +5,7 @@ import { fmtHours, fmtLead, fmtMoney, fmtMonths, fmtNum, fmtPct } from '../../do
 import { SOLUTION_IDS, type Evidence, type Project, type SolutionId, type Stage } from '../../domain/types';
 import { useStore } from '../../state/store';
 import type { Analysis } from '../analysis';
+import { AnimatedNumber } from '../components/AnimatedNumber';
 import { NumberField, RangeField, SelectField } from '../components/fields';
 
 export function ScenarioView({ project, analysis }: { project: Project; analysis: Analysis }) {
@@ -44,7 +45,7 @@ export function ScenarioView({ project, analysis }: { project: Project; analysis
             <div>
               <dt>Capacidad liberada valorizada</dt>
               <dd className="num" data-testid="res-gross">
-                {money(calc.savings.grossCostPerMonth)}/mes
+                <AnimatedNumber value={calc.savings.grossCostPerMonth} format={(n) => `${money(n)}/mes`} />
               </dd>
             </div>
             <div>
@@ -54,13 +55,13 @@ export function ScenarioView({ project, analysis }: { project: Project; analysis
             <div className="total">
               <dt>Neto mensual</dt>
               <dd className="num" data-testid="res-net">
-                {money(calc.savings.netPerMonth)}/mes
+                <AnimatedNumber value={calc.savings.netPerMonth} format={(n) => `${money(n)}/mes`} />
               </dd>
             </div>
             <div>
               <dt>Inversión inicial de referencia</dt>
               <dd className="num" data-testid="res-setup">
-                {money(calc.savings.setupCost)}
+                <AnimatedNumber value={calc.savings.setupCost} format={money} />
               </dd>
             </div>
             <div>
@@ -72,7 +73,7 @@ export function ScenarioView({ project, analysis }: { project: Project; analysis
             <div>
               <dt>Neto a {project.proposal.horizonMonths} meses</dt>
               <dd className="num" data-testid="res-horizon">
-                {money(calc.savings.horizonNet)}
+                <AnimatedNumber value={calc.savings.horizonNet} format={money} />
               </dd>
             </div>
           </dl>
@@ -114,8 +115,8 @@ export function ScenarioView({ project, analysis }: { project: Project; analysis
                 </tr>
               </thead>
               <tbody>
-                {project.stages.map((s) => (
-                  <CompareRow key={s.id} stage={s} project={project} analysis={analysis} maxHours={maxHours} />
+                {project.stages.map((s, i) => (
+                  <CompareRow key={s.id} stage={s} index={i} project={project} analysis={analysis} maxHours={maxHours} />
                 ))}
               </tbody>
               <tfoot>
@@ -148,14 +149,14 @@ export function ScenarioView({ project, analysis }: { project: Project; analysis
   );
 }
 
-function CompareRow({ stage, project, analysis, maxHours }: { stage: Stage; project: Project; analysis: Analysis; maxHours: number }) {
+function CompareRow({ stage, index, project, analysis, maxHours }: { stage: Stage; index: number; project: Project; analysis: Analysis; maxHours: number }) {
   const assignSolution = useStore((s) => s.assignSolution);
   const c = analysis.calc.byId.get(stage.id);
   const current = project.proposal.assignments[stage.id] ?? '';
   const mismatch = current !== '' && !fitsActivity(current as SolutionId, stage);
   const delta = c ? c.proposed.savedHoursPerMonth : 0;
   return (
-    <tr data-testid="compare-row" data-stage={stage.name}>
+    <tr data-testid="compare-row" data-stage={stage.name} className="reveal" style={{ '--i': Math.min(index, 10) } as React.CSSProperties}>
       <th scope="row" className="stage-cell">
         <span>{stage.name}</span>
         <span className="muted small">{ACTIVITY_LABELS[stage.activity]}</span>

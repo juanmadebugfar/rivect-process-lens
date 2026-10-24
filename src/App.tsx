@@ -180,11 +180,13 @@ export function App() {
               </div>
               {tab !== 'diagnostico' ? <KpiStrip project={project} analysis={analysis} /> : null}
               <div className="tabpanel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} data-testid={`panel-${tab}`}>
-                {tab === 'proceso' ? <ProcessView project={project} analysis={analysis} /> : null}
-                {tab === 'hallazgos' ? <FindingsView project={project} analysis={analysis} onOpenStage={openStage} onEditThresholds={() => go('supuestos')} /> : null}
-                {tab === 'escenario' ? <ScenarioView project={project} analysis={analysis} /> : null}
-                {tab === 'supuestos' ? <AssumptionsView project={project} /> : null}
-                {tab === 'diagnostico' ? <DiagnosisView project={project} analysis={analysis} /> : null}
+                <div key={`${tab}-${project.id}`} className="tab-enter">
+                  {tab === 'proceso' ? <ProcessView project={project} analysis={analysis} /> : null}
+                  {tab === 'hallazgos' ? <FindingsView project={project} analysis={analysis} onOpenStage={openStage} onEditThresholds={() => go('supuestos')} /> : null}
+                  {tab === 'escenario' ? <ScenarioView project={project} analysis={analysis} /> : null}
+                  {tab === 'supuestos' ? <AssumptionsView project={project} /> : null}
+                  {tab === 'diagnostico' ? <DiagnosisView project={project} analysis={analysis} /> : null}
+                </div>
               </div>
             </>
           ) : (

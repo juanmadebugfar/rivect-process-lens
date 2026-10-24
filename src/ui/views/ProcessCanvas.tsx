@@ -8,18 +8,22 @@ import {
   useNodesState,
   useReactFlow,
   useStore as useFlowStore,
-  type Edge,
   type OnConnect,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { useCallback, useEffect, useMemo } from 'react';
+import gsap from 'gsap';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { flagsByStage } from '../../domain/findings';
 import type { Project } from '../../domain/types';
 import { useStore } from '../../state/store';
 import type { Analysis } from '../analysis';
+import { motionEnabled } from '../motion';
+import { FlowEdge, type FlowEdgeType } from './FlowEdge';
 import { StageNode, type StageFlowNode } from './StageNode';
+import type { SimState } from './useSimulation';
 
 const nodeTypes = { stage: StageNode };
+const edgeTypes = { flow: FlowEdge };
 
 /** Si la etapa seleccionada queda fuera de la vista (p. ej. recién agregada), la centra sin cambiar el zoom. */
 function EnsureVisible({ stageId }: { stageId: string | null }) {
@@ -47,9 +51,10 @@ interface Props {
   project: Project;
   analysis: Analysis;
   mode: 'actual' | 'propuesto';
+  sim: SimState | null;
 }
 
-export function ProcessCanvas({ project, analysis, mode }: Props) {
+export function ProcessCanvas({ project, analysis, mode, sim }: Props) {
   const selectedStageId = useStore((s) => s.selectedStageId);
   const selectStage = useStore((s) => s.selectStage);
   const moveStage = useStore((s) => s.moveStage);
@@ -59,7 +64,7 @@ export function ProcessCanvas({ project, analysis, mode }: Props) {
   const removeStage = useStore((s) => s.removeStage);
 
   const [nodes, setNodes, onNodesChange] = useNodesState<StageFlowNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<FlowEdgeType>([]);
 
   const roleName = useMemo(() => new Map(project.roles.map((r) => [r.id, r.name])), [project.roles]);
   const flags = useMemo(() => flagsByStage(analysis.findings), [analysis.findings]);
@@ -96,11 +101,12 @@ export function ProcessCanvas({ project, analysis, mode }: Props) {
             solutionId: c?.proposed.solutionId ?? null,
             critical: critical.has(s.id),
             flags: { cuello: !!f?.has('cuello'), repetitiva: !!f?.has('repetitiva') },
+            sim: sim ? (sim.nodes[s.id] ?? 'idle') : null,
           },
         };
       });
     });
-  }, [project.stages, analysis, flags, roleName, selectedStageId, mode, criticalPath, setNodes]);
+  }, [project.stages, analysis, flags, roleName, selectedStageId, mode, criticalPath, sim, setNodes]);
 
   useEffect(() => {
     const critical = new Set(criticalPath);
@@ -114,14 +120,37 @@ export function ProcessCanvas({ project, analysis, mode }: Props) {
           id: c.id,
           source: c.source,
           target: c.target,
-          type: 'smoothstep',
+          type: 'flow' as const,
           className: `${onCritical ? 'edge-critical' : ''} ${back.has(c.id) ? 'edge-back' : ''}`,
+          data: {
+            critical: onCritical,
+            // Los datos "circulan" por una conexión mientras su origen terminó y el destino aún no.
+            flowing: !!sim && !sim.finished && sim.nodes[c.source] === 'done' && sim.nodes[c.target] !== 'done',
+          },
           markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16 },
           ariaLabel: 'Conexión',
         };
       });
     });
-  }, [project.connections, analysis, criticalPath, setEdges]);
+  }, [project.connections, analysis, criticalPath, sim, setEdges]);
+
+  // Entrada escalonada de las etapas al abrir un proceso: refuerza la lectura del flujo, una vez por proceso.
+  const holder = useRef<HTMLDivElement>(null);
+  const animatedFor = useRef<string>('');
+  useEffect(() => {
+    if (!motionEnabled() || nodes.length === 0 || animatedFor.current === project.id) return;
+    animatedFor.current = project.id;
+    let ctx: gsap.Context | undefined;
+    const raf = requestAnimationFrame(() => {
+      ctx = gsap.context(() => {
+        gsap.from('.stage-node', { opacity: 0, y: 14, scale: 0.96, duration: 0.45, ease: 'power2.out', stagger: 0.05, clearProps: 'opacity,transform' });
+      }, holder);
+    });
+    return () => {
+      cancelAnimationFrame(raf);
+      ctx?.revert();
+    };
+  }, [project.id, nodes.length]);
 
   const onConnect = useCallback<OnConnect>(
     (params) => {
@@ -131,11 +160,12 @@ export function ProcessCanvas({ project, analysis, mode }: Props) {
   );
 
   return (
-    <div className="canvas" data-testid="canvas">
+    <div className={`canvas ${sim && !sim.finished ? 'simulating' : ''}`} data-testid="canvas" ref={holder}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}

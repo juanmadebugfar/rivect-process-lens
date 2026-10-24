@@ -4,6 +4,8 @@ import { useStore } from '../../state/store';
 import type { Analysis } from '../analysis';
 import { Segmented } from '../components/fields';
 import { Inspector } from './Inspector';
+import { SimHud } from './SimHud';
+import { useSimulation } from './useSimulation';
 import { ProcessCanvas } from './ProcessCanvas';
 import { StageList } from './StageList';
 
@@ -13,6 +15,7 @@ export function ProcessView({ project, analysis }: { project: Project; analysis:
   const addStage = useStore((s) => s.addStage);
   const arrange = useStore((s) => s.arrange);
   const hasProposal = analysis.calc.solutionsUsed.length > 0;
+  const simulation = useSimulation(project, analysis.calc, mode);
 
   return (
     <div className={`process-view ${listOpen ? 'list-open' : ''}`}>
@@ -32,6 +35,12 @@ export function ProcessView({ project, analysis }: { project: Project; analysis:
           <button type="button" className="btn" data-testid="arrange" onClick={arrange} disabled={project.stages.length < 2}>
             Ordenar
           </button>
+          <button type="button" className="btn" data-testid="simulate" onClick={simulation.start} disabled={project.stages.length === 0}>
+            <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true" fill="currentColor">
+              <path d="M1.5 0.8v8.4L9 5z" />
+            </svg>
+            Simular recorrido
+          </button>
           <div className="spacer" />
           <Segmented
             compact
@@ -47,7 +56,17 @@ export function ProcessView({ project, analysis }: { project: Project; analysis:
         {mode === 'propuesto' && !hasProposal ? (
           <p className="canvas-note">Todavía no hay soluciones asignadas: la vista propuesta es igual a la actual. Asígnelas en la pestaña Escenario.</p>
         ) : null}
-        <ProcessCanvas project={project} analysis={analysis} mode={mode} />
+        <ProcessCanvas project={project} analysis={analysis} mode={mode} sim={simulation.state} />
+        {simulation.state ? (
+          <SimHud
+            sim={simulation.state}
+            hoursPerDay={project.hoursPerDay}
+            clockRef={simulation.clockRef}
+            barRef={simulation.barRef}
+            onStop={simulation.stop}
+            onReplay={simulation.start}
+          />
+        ) : null}
       </section>
       <div className="p-inspector">
         <Inspector project={project} analysis={analysis} />

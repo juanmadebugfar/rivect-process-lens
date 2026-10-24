@@ -56,8 +56,8 @@ export function FindingsView({ project, analysis, onOpenStage, onEditThresholds 
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((f) => (
-                      <FindingRow key={f.id} f={f} onOpen={onOpenStage} />
+                    {items.map((f, i) => (
+                      <FindingRow key={f.id} f={f} index={i} onOpen={onOpenStage} />
                     ))}
                   </tbody>
                 </table>
@@ -89,9 +89,9 @@ export function FindingsView({ project, analysis, onOpenStage, onEditThresholds 
   );
 }
 
-function FindingRow({ f, onOpen }: { f: Finding; onOpen: (id: string) => void }) {
+function FindingRow({ f, index, onOpen }: { f: Finding; index: number; onOpen: (id: string) => void }) {
   return (
-    <tr data-testid="finding-row" data-rule={f.rule}>
+    <tr data-testid="finding-row" data-rule={f.rule} className="reveal" style={{ '--i': Math.min(index, 10) } as React.CSSProperties}>
       <td>
         <span className={`chip sev ${f.severity}`}>{f.severity === 'alta' ? 'Alta' : 'Media'}</span>
       </td>

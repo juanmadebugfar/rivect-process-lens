@@ -281,6 +281,7 @@
 }
 
 .kpis {
+  position: relative; /* contiene los .sr-only absolutos al hacer scroll horizontal */
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   background: var(--surface);
