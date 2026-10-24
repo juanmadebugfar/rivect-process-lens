@@ -30,8 +30,10 @@ function EnsureVisible({ stageId, coveredRight }: { stageId: string | null; cove
   const flow = useReactFlow();
   const width = useFlowStore((s) => s.width);
   const height = useFlowStore((s) => s.height);
+  // La etapa recién agregada aparece en React Flow un instante después de seleccionarse.
+  const exists = useFlowStore((s) => (stageId ? s.nodeLookup.has(stageId) : false));
   useEffect(() => {
-    if (!stageId) return;
+    if (!stageId || !exists) return;
     const node = flow.getNode(stageId);
     if (!node) return;
     const { x, y, zoom } = flow.getViewport();
@@ -46,7 +48,7 @@ function EnsureVisible({ stageId, coveredRight }: { stageId: string | null; cove
     }
     // Solo al cambiar la selección: mover el lienzo mientras se arrastra sería molesto.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stageId]);
+  }, [stageId, exists]);
   return null;
 }
 
@@ -184,7 +186,6 @@ export function ProcessCanvas({ project, analysis, mode, sim, inspectorOpen }: P
         fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
         minZoom={0.2}
         maxZoom={1.6}
-        proOptions={{ hideAttribution: true }}
         nodesConnectable
         elevateNodesOnSelect
         aria-label="Lienzo del proceso"

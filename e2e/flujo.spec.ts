@@ -239,3 +239,47 @@ test.describe('escenario', () => {
     await expect(app.locator('.stage-node .delta').first()).toBeVisible();
   });
 });
+
+test.describe('interacción directa con el lienzo', () => {
+  test('la tecla Suprimir elimina la etapa seleccionada y se puede deshacer', async ({ app }) => {
+    const node = app.locator('[data-testid=stage-node]', { hasText: 'Archivo y legajo digital' });
+    await node.click();
+    await app.locator('.react-flow__node.selected').focus();
+    await app.keyboard.press('Delete');
+    await expect(app.getByTestId('stage-node')).toHaveCount(8);
+    await app.getByTestId('toast').getByRole('button', { name: 'Deshacer' }).click();
+    await expect(app.getByTestId('stage-node')).toHaveCount(9);
+  });
+
+  test('seleccionar una conexión y suprimirla la desconecta', async ({ app }) => {
+    const edges = app.locator('.react-flow__edge');
+    const before = await edges.count();
+    // El primer tramo puede quedar fuera de la vista: se dispara el clic sobre el elemento de la conexión.
+    await edges.nth(1).evaluate((el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+    await expect(app.locator('.react-flow__edge.selected')).toHaveCount(1);
+    await app.keyboard.press('Delete');
+    await expect(edges).toHaveCount(before - 1);
+  });
+
+  test('la lista de etapas permite seleccionar y editar sin usar el lienzo', async ({ app }) => {
+    await app.getByTestId('toggle-list').click();
+    await expect(app.getByTestId('stage-row')).toHaveCount(9);
+    await app.getByTestId('stage-row').nth(3).click();
+    await expect(app.getByTestId('stage-name')).toHaveValue('Conciliación bancaria');
+    await app.getByTestId('stage-name').fill('Conciliación renombrada');
+    await expect(app.getByTestId('stage-row').nth(3)).toContainText('Conciliación renombrada');
+    await app.getByTestId('close-inspector').click();
+    await expect(app.getByTestId('inspector')).toHaveCount(0);
+  });
+
+  test('una etapa nueva queda visible en el lienzo', async ({ app }) => {
+    for (let i = 0; i < 4; i++) await app.getByTestId('add-stage').click();
+    const box = await app.locator('.react-flow__node.selected').boundingBox();
+    const canvas = await app.getByTestId('canvas').boundingBox();
+    if (!box || !canvas) throw new Error('sin cajas');
+    await app.waitForTimeout(400);
+    const after = await app.locator('.react-flow__node.selected').boundingBox();
+    expect(after?.y).toBeGreaterThanOrEqual(canvas.y - 2);
+    expect((after?.y ?? 0) + (after?.height ?? 0)).toBeLessThanOrEqual(canvas.y + canvas.height + 2);
+  });
+});

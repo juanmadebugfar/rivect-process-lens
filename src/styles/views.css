@@ -247,14 +247,14 @@ code {
   font-weight: 600;
 }
 .compare-table td .field {
-  min-width: 190px;
+  min-width: 170px;
 }
 .compare-table th.stage-cell {
-  min-width: 210px;
+  min-width: 190px;
 }
 .compare-table .bars-col {
-  width: 20%;
-  min-width: 130px;
+  width: 16%;
+  min-width: 100px;
 }
 .legend-inline {
   text-transform: none;

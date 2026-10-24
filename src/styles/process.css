@@ -111,6 +111,14 @@
   stroke: var(--focus);
   stroke-width: 2.6;
 }
+.canvas .react-flow__attribution {
+  background: rgba(251, 250, 247, 0.85);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+.canvas .react-flow__attribution a {
+  color: var(--ink-3);
+}
 .canvas-empty {
   position: absolute;
   inset: 0;
@@ -366,26 +374,12 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
 }
-.issues {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.5px;
-}
-.issues li,
 .issue-line {
   padding: 6px 8px;
   background: var(--signal-bg);
   color: #6b2d08;
   border-radius: var(--radius);
   font-size: 12.5px;
-}
-.legend {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12.5px;
-  color: var(--ink-2);
 }
 .swatch {
   display: inline-block;
