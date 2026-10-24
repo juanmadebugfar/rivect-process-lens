@@ -1,0 +1,229 @@
+/*
+ * Movimiento con propósito. El flujo indica dirección, el destello indica "esto se recalculó",
+ * la simulación indica ejecución. Todo lo animado por CSS se condiciona a html[data-motion='on']
+ * (ver ui/motion.ts: respeta prefers-reduced-motion y se apaga bajo automatización).
+ */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes tab-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+@keyframes node-run {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px var(--signal-bg), 0 0 0 4px rgba(168, 71, 15, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 0 2px var(--signal-bg), 0 0 0 9px rgba(168, 71, 15, 0.05);
+  }
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes port-ping {
+  0% {
+    box-shadow: 0 0 0 0 rgba(36, 87, 166, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 9px rgba(36, 87, 166, 0);
+  }
+}
+
+[data-motion='on'] .reveal {
+  animation: rise 0.34s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+  animation-delay: calc(var(--i, 0) * 30ms);
+}
+[data-motion='on'] .tab-enter {
+  animation: tab-in 0.22s ease-out backwards;
+}
+.tab-enter {
+  height: 100%;
+}
+
+/* ---------- Conexiones con flujo ---------- */
+.edge-flow {
+  stroke: var(--signal);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-dasharray: 4 12;
+  animation: dash-flow 1.2s linear infinite;
+  pointer-events: none;
+}
+.edge-flow.fast {
+  stroke-width: 3;
+  animation-duration: 0.45s;
+}
+.edge-dot {
+  fill: var(--signal);
+  filter: drop-shadow(0 0 3px rgba(168, 71, 15, 0.7));
+  pointer-events: none;
+}
+
+/* ---------- Puertos de conexión ---------- */
+.stage-node .handle {
+  transition: transform 0.12s, background 0.12s;
+}
+.stage-node:hover .handle,
+.stage-node.selected .handle {
+  background: var(--ink) !important;
+}
+[data-motion='on'] .react-flow__handle.connectingfrom,
+[data-motion='on'] .react-flow__handle.connectionindicator:hover {
+  animation: port-ping 0.9s ease-out infinite;
+}
+.canvas .react-flow__handle.connectionindicator:hover {
+  transform: scale(1.35);
+}
+
+/* ---------- Simulación del recorrido ---------- */
+.stage-node {
+  position: relative;
+}
+.canvas.simulating .stage-node.sim-idle {
+  opacity: 0.45;
+}
+.stage-node.sim-running {
+  border-color: var(--signal);
+  box-shadow: 0 0 0 2px var(--signal-bg), 0 0 0 4px rgba(168, 71, 15, 0.25);
+}
+[data-motion='on'] .stage-node.sim-running {
+  animation: node-run 1s ease-in-out infinite;
+}
+.stage-node.sim-done {
+  border-color: var(--propose);
+}
+.sn-status {
+  position: absolute;
+  top: 7px;
+  right: 8px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+}
+.sn-status.running {
+  border: 2px solid var(--signal-bg);
+  border-top-color: var(--signal);
+}
+[data-motion='on'] .sn-status.running {
+  animation: spin 0.8s linear infinite;
+}
+.sn-status.done {
+  background: var(--propose);
+}
+.sn-status.done::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 2.5px;
+  width: 4px;
+  height: 7px;
+  border: solid #fff;
+  border-width: 0 1.8px 1.8px 0;
+  transform: rotate(45deg);
+}
+
+.sim-hud {
+  position: absolute;
+  top: 56px;
+  left: 12px;
+  right: 12px;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto auto minmax(80px, 1fr) auto auto;
+  align-items: center;
+  gap: 4px 14px;
+  min-height: 42px;
+  padding: 6px 10px 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-left: 3px solid var(--signal);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px rgba(21, 25, 31, 0.14);
+}
+.sim-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.sim-clock {
+  font-size: 16px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sim-clock output {
+  color: var(--signal);
+}
+.sim-track {
+  height: 4px;
+  background: var(--line);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.sim-track span {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--signal);
+}
+.sim-result,
+.sim-note {
+  font-size: 12.5px;
+  min-width: 0;
+}
+.sim-actions {
+  display: flex;
+  gap: 4px;
+}
+.p-canvas {
+  position: relative;
+}
+
+/* ---------- Miniaturas del flujo ---------- */
+.thumb {
+  display: block;
+  width: 100%;
+  height: 26px;
+  margin-top: 4px;
+}
+.thumb line {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+.thumb circle {
+  fill: var(--ink-3);
+}
+.project-list li.on .thumb circle {
+  fill: var(--signal);
+}
+.project-list li.on .thumb line {
+  stroke: var(--ink-3);
+}
+
+@media (max-width: 900px) {
+  .sim-hud {
+    grid-template-columns: 1fr auto;
+  }
+  .sim-track,
+  .sim-result,
+  .sim-note {
+    grid-column: 1 / -1;
+  }
+}
