@@ -11,7 +11,7 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "playwright test --project=desktop",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build",
     "screenshots": "playwright test --project=screenshots"
   },

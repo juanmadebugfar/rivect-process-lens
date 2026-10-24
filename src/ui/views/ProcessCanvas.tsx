@@ -26,7 +26,7 @@ const nodeTypes = { stage: StageNode };
 const edgeTypes = { flow: FlowEdge };
 
 /** Si la etapa seleccionada queda fuera de la vista (p. ej. recién agregada), la centra sin cambiar el zoom. */
-function EnsureVisible({ stageId }: { stageId: string | null }) {
+function EnsureVisible({ stageId, coveredRight }: { stageId: string | null; coveredRight: number }) {
   const flow = useReactFlow();
   const width = useFlowStore((s) => s.width);
   const height = useFlowStore((s) => s.height);
@@ -39,8 +39,11 @@ function EnsureVisible({ stageId }: { stageId: string | null }) {
     const h = node.measured?.height ?? 120;
     const left = node.position.x * zoom + x;
     const top = node.position.y * zoom + y;
-    const inside = left >= 0 && top >= 0 && left + w * zoom <= width && top + h * zoom <= height;
-    if (!inside) void flow.setCenter(node.position.x + w / 2, node.position.y + h / 2, { zoom, duration: 200 });
+    const inside = left >= 0 && top >= 0 && left + w * zoom <= width - coveredRight && top + h * zoom <= height;
+    if (!inside) {
+      // Centra en la parte visible (el panel de la etapa flota sobre el borde derecho).
+      void flow.setCenter(node.position.x + w / 2 + coveredRight / (2 * zoom), node.position.y + h / 2, { zoom, duration: 200 });
+    }
     // Solo al cambiar la selección: mover el lienzo mientras se arrastra sería molesto.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stageId]);
@@ -52,9 +55,10 @@ interface Props {
   analysis: Analysis;
   mode: 'actual' | 'propuesto';
   sim: SimState | null;
+  inspectorOpen: boolean;
 }
 
-export function ProcessCanvas({ project, analysis, mode, sim }: Props) {
+export function ProcessCanvas({ project, analysis, mode, sim, inspectorOpen }: Props) {
   const selectedStageId = useStore((s) => s.selectedStageId);
   const selectStage = useStore((s) => s.selectStage);
   const moveStage = useStore((s) => s.moveStage);
@@ -187,7 +191,7 @@ export function ProcessCanvas({ project, analysis, mode, sim }: Props) {
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.2} color="var(--grid)" />
         <Controls showInteractive={false} position="bottom-left" />
-        <EnsureVisible stageId={selectedStageId} />
+        <EnsureVisible stageId={selectedStageId} coveredRight={inspectorOpen && window.innerWidth > 1100 ? 350 : 0} />
       </ReactFlow>
       {project.stages.length === 0 ? (
         <div className="canvas-empty">

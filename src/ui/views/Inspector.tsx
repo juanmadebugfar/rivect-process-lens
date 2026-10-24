@@ -3,7 +3,6 @@ import { ACTIVITY_LABELS, EVIDENCE_HELP, EVIDENCE_SHORT, FREQUENCY_LABELS, SOLUT
 import { fmtLead, fmtMoney, fmtNum } from '../../domain/format';
 import { RULES } from '../../domain/findings';
 import { ACTIVITY_TYPES, EVIDENCE_LEVELS, FREQUENCY_UNITS, type Project, type Stage } from '../../domain/types';
-import { graphIssues } from '../../domain/graph';
 import { useStore } from '../../state/store';
 import type { Analysis } from '../analysis';
 import { NumberField, RangeField, SelectField, Segmented, TextField } from '../components/fields';
@@ -16,64 +15,8 @@ interface Props {
 export function Inspector({ project, analysis }: Props) {
   const selectedId = useStore((s) => s.selectedStageId);
   const stage = project.stages.find((s) => s.id === selectedId);
-  if (!stage) return <ProcessSummary project={project} analysis={analysis} />;
+  if (!stage) return null;
   return <StageForm key={stage.id} stage={stage} project={project} analysis={analysis} />;
-}
-
-function ProcessSummary({ project, analysis }: Props) {
-  const issues = graphIssues(project.stages, analysis.calc.graph);
-  const { current } = analysis.calc;
-  return (
-    <aside className="inspector" aria-label="Resumen del proceso">
-      <h2 className="panel-title">Proceso</h2>
-      <p className="muted">Seleccione una etapa en el lienzo o en la lista para editarla.</p>
-      <dl className="kv">
-        <div>
-          <dt>Etapas</dt>
-          <dd className="num">{project.stages.length}</dd>
-        </div>
-        <div>
-          <dt>Conexiones</dt>
-          <dd className="num">{project.connections.length}</dd>
-        </div>
-        <div>
-          <dt>Trabajo mensual</dt>
-          <dd className="num">{fmtNum(current.hoursPerMonth, 0)} h</dd>
-        </div>
-        <div>
-          <dt>Tiempo de ciclo</dt>
-          <dd className="num">{fmtLead(current.cycleHours, project.hoursPerDay)}</dd>
-        </div>
-      </dl>
-      {issues.length > 0 ? (
-        <section aria-label="Avisos del flujo">
-          <h3 className="sub-title">Avisos del flujo</h3>
-          <ul className="issues">
-            {issues.map((i) => (
-              <li key={i.message}>{i.message}</li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-      {analysis.calc.missingRoles.length > 0 ? (
-        <p className="issue-line">{analysis.calc.missingRoles.length} etapa(s) sin rol: su costo se calcula como 0.</p>
-      ) : null}
-      <section>
-        <h3 className="sub-title">Cómo leer el lienzo</h3>
-        <ul className="legend">
-          <li>
-            <span className="swatch dashed" /> Borde punteado: el dato es un supuesto del equipo.
-          </li>
-          <li>
-            <span className="swatch crit" /> Conexión resaltada: camino crítico del tiempo de ciclo.
-          </li>
-          <li>
-            <span className="swatch bar" /> Barra inferior: % del tiempo activo que es manual.
-          </li>
-        </ul>
-      </section>
-    </aside>
-  );
 }
 
 function StageForm({ stage, project, analysis }: { stage: Stage; project: Project; analysis: Analysis }) {
@@ -97,9 +40,14 @@ function StageForm({ stage, project, analysis }: { stage: Stage; project: Projec
     <aside className="inspector" aria-label={`Editar etapa ${stage.name}`} data-testid="inspector">
       <div className="panel-head">
         <h2 className="panel-title">Etapa</h2>
-        <button type="button" className="btn ghost danger" data-testid="delete-stage" onClick={() => removeStage(stage.id)}>
-          Eliminar
-        </button>
+        <div className="row">
+          <button type="button" className="btn ghost danger" data-testid="delete-stage" onClick={() => removeStage(stage.id)}>
+            Eliminar
+          </button>
+          <button type="button" className="btn ghost icon" aria-label="Cerrar el panel de la etapa" data-testid="close-inspector" onClick={() => selectStage(null)}>
+            ×
+          </button>
+        </div>
       </div>
 
       <TextField label="Nombre" value={stage.name} maxLength={120} onChange={(name) => set({ name })} testId="stage-name" />

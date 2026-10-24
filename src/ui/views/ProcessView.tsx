@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { graphIssues } from '../../domain/graph';
 import type { Project } from '../../domain/types';
 import { useStore } from '../../state/store';
 import type { Analysis } from '../analysis';
@@ -15,6 +16,9 @@ export function ProcessView({ project, analysis }: { project: Project; analysis:
   const addStage = useStore((s) => s.addStage);
   const arrange = useStore((s) => s.arrange);
   const hasProposal = analysis.calc.solutionsUsed.length > 0;
+  const selectedId = useStore((s) => s.selectedStageId);
+  const hasSelection = project.stages.some((s) => s.id === selectedId);
+  const issues = graphIssues(project.stages, analysis.calc.graph);
   const simulation = useSimulation(project, analysis.calc, mode);
 
   return (
@@ -53,10 +57,29 @@ export function ProcessView({ project, analysis }: { project: Project; analysis:
             ]}
           />
         </div>
+        {issues.map((i) => (
+          <p key={i.message} className="canvas-issue">
+            {i.message}
+          </p>
+        ))}
+        {analysis.calc.missingRoles.length > 0 ? (
+          <p className="canvas-issue">{analysis.calc.missingRoles.length} etapa(s) sin rol: su costo se calcula como 0.</p>
+        ) : null}
         {mode === 'propuesto' && !hasProposal ? (
           <p className="canvas-note">Todavía no hay soluciones asignadas: la vista propuesta es igual a la actual. Asígnelas en la pestaña Escenario.</p>
         ) : null}
-        <ProcessCanvas project={project} analysis={analysis} mode={mode} sim={simulation.state} />
+        <ProcessCanvas project={project} analysis={analysis} mode={mode} sim={simulation.state} inspectorOpen={hasSelection} />
+        <ul className="canvas-legend" aria-label="Cómo leer el lienzo">
+          <li>
+            <span className="swatch dashed" /> Dato supuesto
+          </li>
+          <li>
+            <span className="swatch crit" /> Camino crítico
+          </li>
+          <li>
+            <span className="swatch bar" /> % manual
+          </li>
+        </ul>
         {simulation.state ? (
           <SimHud
             sim={simulation.state}
@@ -68,9 +91,11 @@ export function ProcessView({ project, analysis }: { project: Project; analysis:
           />
         ) : null}
       </section>
-      <div className="p-inspector">
-        <Inspector project={project} analysis={analysis} />
-      </div>
+      {hasSelection ? (
+        <div className="p-inspector">
+          <Inspector project={project} analysis={analysis} />
+        </div>
+      ) : null}
     </div>
   );
 }
