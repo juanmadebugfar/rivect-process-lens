@@ -69,10 +69,26 @@ describe('cloneProject', () => {
 });
 
 describe('autoLayout', () => {
-  it('ubica cada etapa a la derecha de sus predecesoras', () => {
+  it('ubica cada etapa a la derecha o en una banda posterior respecto de sus predecesoras', () => {
     const pos = autoLayout(first.stages, first.connections);
     for (const c of first.connections) {
-      expect((pos.get(c.target)?.x ?? 0)).toBeGreaterThan(pos.get(c.source)?.x ?? Infinity);
+      const a = pos.get(c.source);
+      const b = pos.get(c.target);
+      expect(a && b && (b.x > a.x || b.y > a.y)).toBe(true);
+    }
+  });
+
+  it('no superpone etapas', () => {
+    for (const p of sampleProjects()) {
+      const pos = [...autoLayout(p.stages, p.connections).values()].map((v) => `${v.x},${v.y}`);
+      expect(new Set(pos).size).toBe(pos.length);
+    }
+  });
+
+  it('con una sola banda la disposición es de izquierda a derecha', () => {
+    const pos = autoLayout(first.stages, first.connections, 99);
+    for (const c of first.connections) {
+      expect(pos.get(c.target)?.x).toBeGreaterThan(pos.get(c.source)?.x ?? Infinity);
     }
   });
 });

@@ -1,0 +1,31 @@
+:root {
+  /* Superficies */
+  --paper: #f3f1ec;
+  --surface: #fbfaf7;
+  --surface-2: #ebe8e0;
+  --line: #d6d2c6;
+  --line-strong: #b9b4a5;
+  --grid: #cfcabb;
+
+  /* Tinta */
+  --ink: #15191f;
+  --ink-2: #444a54;
+  --ink-3: #5d636d;
+
+  /* Señales: cada color significa una sola cosa */
+  --signal: #a8470f; /* atención: cuello de botella, camino crítico */
+  --signal-bg: #f6e3d6;
+  --propose: #0b6657; /* propuesto / mejora */
+  --propose-bg: #d9ece6;
+  --hyp: #6b5a1e; /* hipótesis / supuesto */
+  --hyp-bg: #efe6c4;
+  --focus: #2457a6;
+  --danger: #a3262a;
+
+  --radius: 4px;
+  --font-ui: 'Instrument Sans Variable', 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --font-serif: 'Source Serif 4 Variable', 'Source Serif 4', Georgia, serif;
+
+  --topbar-h: 48px;
+}
